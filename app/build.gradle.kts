@@ -15,11 +15,20 @@ android {
     versionName = "1.0.1"
   }
 
+  signingConfigs {
+    create("release") {
+      storeFile = file("${rootProject.projectDir}/release.keystore")
+      storePassword = "docusnap123"
+      keyAlias = "docusnap"
+      keyPassword = "docusnap123"
+    }
+  }
+
   buildTypes {
     release {
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("debug")
+      signingConfig = signingConfigs.getByName("release")
     }
   }
   compileOptions {
