@@ -8,3 +8,4 @@ data class AppUpdateInfo(
     val downloadUrl: String,
     val isUpdateAvailable: Boolean
 )
+
