@@ -135,3 +135,4 @@ fun EmptyDocumentsCard(modifier: Modifier = Modifier) {
         }
     }
 }
+

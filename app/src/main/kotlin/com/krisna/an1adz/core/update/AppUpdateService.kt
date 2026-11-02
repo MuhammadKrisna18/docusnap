@@ -41,6 +41,17 @@ class DefaultAppUpdateService(
                     setRequestProperty("User-Agent", "DocuSnap-App")
                 }
 
+                if (connection.responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                    return@runCatching AppUpdateInfo(
+                        currentVersion = currentVersion,
+                        latestVersion = currentVersion,
+                        releaseName = "",
+                        releaseNotes = "",
+                        downloadUrl = "",
+                        isUpdateAvailable = false
+                    )
+                }
+
                 if (connection.responseCode !in 200..299) {
                     throw IllegalStateException("HTTP ${connection.responseCode}: ${connection.responseMessage}")
                 }

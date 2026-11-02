@@ -150,3 +150,4 @@ fun ZoomablePdfPageCard(
 private fun Modifier.clipToBounds(): Modifier = this.graphicsLayer {
     clip = true
 }
+
