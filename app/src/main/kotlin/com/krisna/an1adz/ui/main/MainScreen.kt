@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -42,6 +43,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -71,6 +73,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.krisna.an1adz.PdfPreviewNavKey
 import com.krisna.an1adz.core.pdf.FilterType
+import com.krisna.an1adz.core.update.AppUpdateInfo
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -86,13 +89,24 @@ fun MainScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val updateUiState by viewModel.updateUiState.collectAsStateWithLifecycle()
     val recentDocs by viewModel.recentDocuments.collectAsStateWithLifecycle()
+
+    val currentVersion = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0"
+        }.getOrDefault("1.0")
+    }
 
     var pendingImageUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var pendingPdfUri by remember { mutableStateOf<Uri?>(null) }
     var showFilterDialog by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf(FilterType.SCAN_BLACK_WHITE) }
     var documentToDelete by remember { mutableStateOf<File?>(null) }
+
+    LaunchedEffect(currentVersion) {
+        viewModel.checkForUpdates(currentVersion, isManual = false)
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -176,7 +190,18 @@ fun MainScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
-                )
+                ),
+                actions = {
+                    IconButton(
+                        onClick = { viewModel.checkForUpdates(currentVersion, isManual = true) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SystemUpdate,
+                            contentDescription = "Periksa Pembaruan",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -406,6 +431,143 @@ fun MainScreen(
             )
         }
         is MainUiState.Idle -> Unit
+    }
+
+    when (val updateState = updateUiState) {
+        is UpdateUiState.Checking -> {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = {},
+                title = { Text("Memeriksa Pembaruan", fontWeight = FontWeight.Bold) },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Text(
+                            text = "Mengecek versi rilis terbaru di GitHub...",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            )
+        }
+        is UpdateUiState.UpdateAvailable -> {
+            val info = updateState.info
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissUpdate() },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.SystemUpdate,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(36.dp)
+                    )
+                },
+                title = { Text("Pembaruan Tersedia!", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "DocuSnap ${info.latestVersion} telah tersedia (versi Anda saat ini: v${info.currentVersion}).",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        if (info.releaseNotes.isNotBlank()) {
+                            Text(
+                                text = "Catatan Pembaruan:\n${info.releaseNotes}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.startDownloadUpdate(context, info) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Perbarui Sekarang")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissUpdate() }) {
+                        Text("Nanti")
+                    }
+                }
+            )
+        }
+        is UpdateUiState.Downloading -> {
+            AlertDialog(
+                onDismissRequest = {},
+                confirmButton = {},
+                title = { Text("Mengunduh Pembaruan...", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (updateState.progress >= 0f) {
+                            LinearProgressIndicator(
+                                progress = { updateState.progress },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            val progressPercent = (updateState.progress * 100).toInt()
+                            val downloadedStr = formatFileSize(updateState.downloadedBytes)
+                            val totalStr = formatFileSize(updateState.totalBytes)
+                            Text(
+                                text = "$progressPercent% ($downloadedStr / $totalStr)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = formatFileSize(updateState.downloadedBytes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            )
+        }
+        is UpdateUiState.DownloadCompleted -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissUpdate() },
+                title = { Text("Unduhan Selesai", fontWeight = FontWeight.Bold) },
+                text = { Text("Pembaruan siap dipasang di perangkat Anda.") },
+                confirmButton = {
+                    Button(
+                        onClick = { viewModel.installApk(context, updateState.apkFile) },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Pasang Sekarang")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissUpdate() }) {
+                        Text("Tutup")
+                    }
+                }
+            )
+        }
+        is UpdateUiState.Error -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissUpdate() },
+                title = { Text("Pembaruan Gagal", fontWeight = FontWeight.Bold) },
+                text = { Text(updateState.message) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.dismissUpdate() }) {
+                        Text("Tutup")
+                    }
+                }
+            )
+        }
+        is UpdateUiState.Idle -> Unit
     }
 }
 
