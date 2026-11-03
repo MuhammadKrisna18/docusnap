@@ -71,9 +71,10 @@ class MainScreenViewModelTest {
         val viewModel = MainScreenViewModel(FakePdfRepository(), fakeService)
 
         viewModel.checkForUpdates("1.0", isManual = true)
+        viewModel.updateUiState.first { it is UpdateUiState.UpdateAvailable }
         viewModel.dismissUpdate()
 
-        assertEquals(UpdateUiState.Idle, viewModel.updateUiState.first())
+        assertEquals(UpdateUiState.Idle, viewModel.updateUiState.value)
     }
 }
 
