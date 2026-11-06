@@ -46,10 +46,17 @@ fun FilterSelectionDialog(
                 )
 
                 FilterOptionRow(
-                    label = "Gambar Scan Hitam Putih",
-                    description = "Teks hitam tegas & latar putih bersih seperti hasil mesin fotokopi",
+                    label = "Gambar Scan Hitam Putih (Poco/CamScanner)",
+                    description = "Teks hitam pekat & latar putih bersih tanpa bayangan",
                     selected = selectedFilter == FilterType.SCAN_BLACK_WHITE,
                     onSelect = { onFilterChange(FilterType.SCAN_BLACK_WHITE) }
+                )
+
+                FilterOptionRow(
+                    label = "Gambar Berwarna Tajam (Color Enhanced)",
+                    description = "Latar putih bersih dengan warna stempel & foto tetap hidup",
+                    selected = selectedFilter == FilterType.SCAN_ENHANCED,
+                    onSelect = { onFilterChange(FilterType.SCAN_ENHANCED) }
                 )
 
                 FilterOptionRow(
