@@ -103,3 +103,4 @@ private class FakePdfRepository : PdfRepository {
     override suspend fun renameDocument(file: File, newName: String): Result<File> =
         Result.success(File(file.parentFile, newName))
 }
+

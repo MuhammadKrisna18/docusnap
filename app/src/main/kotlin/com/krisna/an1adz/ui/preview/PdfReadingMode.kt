@@ -7,3 +7,4 @@ enum class PdfReadingMode(val backgroundColor: Color) {
     SEPIA(Color(0xFFFBF0D9)),
     NIGHT(Color(0xFF0F172A))
 }
+

@@ -4,14 +4,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import androidx.navigation3.runtime.NavKey
+import com.krisna.an1adz.data.DefaultOfficeRepository
 import com.krisna.an1adz.data.DefaultPdfRepository
 import com.krisna.an1adz.data.DefaultSignatureRepository
 import com.krisna.an1adz.ui.main.MainScreen
 import com.krisna.an1adz.ui.main.MainScreenViewModel
+import com.krisna.an1adz.ui.office.docx.DocxViewerScreen
+import com.krisna.an1adz.ui.office.docx.DocxViewerViewModel
 import com.krisna.an1adz.ui.preview.PdfPreviewScreen
 import com.krisna.an1adz.ui.preview.PdfPreviewViewModel
 import com.krisna.an1adz.ui.signature.SignatureScreen
@@ -23,6 +26,7 @@ fun MainNavigation(initialNavKey: NavKey = Main) {
     val context = LocalContext.current
     val pdfRepository = remember(context) { DefaultPdfRepository(context) }
     val signatureRepository = remember(context) { DefaultSignatureRepository(context) }
+    val officeRepository = remember(context) { DefaultOfficeRepository(context) }
 
     NavDisplay(
         backStack = backStack,
@@ -30,7 +34,10 @@ fun MainNavigation(initialNavKey: NavKey = Main) {
         entryProvider = entryProvider {
             entry<Main> {
                 val mainViewModel: MainScreenViewModel = viewModel {
-                    MainScreenViewModel(pdfRepository)
+                    MainScreenViewModel(
+                        pdfRepository = pdfRepository,
+                        officeRepository = officeRepository
+                    )
                 }
                 MainScreen(
                     viewModel = mainViewModel,
@@ -55,6 +62,20 @@ fun MainNavigation(initialNavKey: NavKey = Main) {
                 SignatureScreen(
                     viewModel = signatureViewModel,
                     onBackClick = { backStack.removeLastOrNull() }
+                )
+            }
+            entry<DocxViewerNavKey> { key ->
+                val docxViewModel: DocxViewerViewModel = viewModel(
+                    key = key.filePath
+                ) {
+                    DocxViewerViewModel(key.filePath, officeRepository)
+                }
+                DocxViewerScreen(
+                    viewModel = docxViewModel,
+                    onBackClick = { backStack.removeLastOrNull() },
+                    onNavigateToPdf = { pdfPath ->
+                        backStack.add(PdfPreviewNavKey(pdfPath))
+                    }
                 )
             }
         }

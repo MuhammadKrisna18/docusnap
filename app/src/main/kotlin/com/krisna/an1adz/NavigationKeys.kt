@@ -11,3 +11,6 @@ data class PdfPreviewNavKey(val filePath: String) : NavKey
 
 @Serializable
 data object SignatureNavKey : NavKey
+
+@Serializable
+data class DocxViewerNavKey(val filePath: String) : NavKey

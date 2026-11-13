@@ -8,6 +8,7 @@ import com.krisna.an1adz.core.pdf.FilterType
 import com.krisna.an1adz.core.update.AppUpdateInfo
 import com.krisna.an1adz.core.update.AppUpdateService
 import com.krisna.an1adz.core.update.DefaultAppUpdateService
+import com.krisna.an1adz.data.OfficeRepository
 import com.krisna.an1adz.data.PdfRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,12 +37,14 @@ sealed interface UpdateUiState {
 
 sealed interface MainNavigationEvent {
     data class OpenPreview(val filePath: String) : MainNavigationEvent
+    data class OpenDocx(val filePath: String) : MainNavigationEvent
     data class ShowToast(val message: String) : MainNavigationEvent
 }
 
 class MainScreenViewModel(
     private val pdfRepository: PdfRepository,
-    private val appUpdateService: AppUpdateService = DefaultAppUpdateService()
+    private val appUpdateService: AppUpdateService = DefaultAppUpdateService(),
+    private val officeRepository: OfficeRepository? = null
 ) : ViewModel() {
 
     val recentDocuments: StateFlow<List<File>> = pdfRepository.recentDocuments
@@ -141,6 +144,21 @@ class MainScreenViewModel(
                 }
                 .onFailure { throwable ->
                     _uiState.value = MainUiState.Error(throwable.localizedMessage ?: "Gagal membuka berkas PDF")
+                }
+        }
+    }
+
+    fun openExternalDocx(uri: Uri) {
+        viewModelScope.launch {
+            if (officeRepository == null) return@launch
+            _uiState.value = MainUiState.Processing("Membuka dokumen Word...")
+            officeRepository.importOfficeDocument(uri, "docx")
+                .onSuccess { file ->
+                    _uiState.value = MainUiState.Idle
+                    _eventChannel.send(MainNavigationEvent.OpenDocx(file.absolutePath))
+                }
+                .onFailure { throwable ->
+                    _uiState.value = MainUiState.Error(throwable.localizedMessage ?: "Gagal membuka dokumen Word")
                 }
         }
     }

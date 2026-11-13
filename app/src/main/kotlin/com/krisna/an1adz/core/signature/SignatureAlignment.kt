@@ -5,3 +5,4 @@ enum class SignatureAlignment {
     BOTTOM_LEFT,
     BOTTOM_CENTER
 }
+

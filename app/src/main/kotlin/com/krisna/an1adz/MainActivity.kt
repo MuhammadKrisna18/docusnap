@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val initialNavKey: NavKey = extractPdfNavKeyFromIntent(intent) ?: Main
+        val initialNavKey: NavKey = extractNavKeyFromIntent(intent) ?: Main
 
         enableEdgeToEdge()
         setContent {
@@ -35,32 +35,33 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun extractPdfNavKeyFromIntent(intent: Intent?): NavKey? {
+    private fun extractNavKeyFromIntent(intent: Intent?): NavKey? {
         if (intent == null) return null
         val uri: Uri? = when (intent.action) {
             Intent.ACTION_VIEW -> intent.data
             Intent.ACTION_SEND -> {
-                if (intent.type == "application/pdf" || intent.type?.startsWith("application/") == true) {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                        intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        intent.getParcelableExtra(Intent.EXTRA_STREAM)
-                    }
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
                 } else {
-                    null
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 }
             }
             else -> null
         }
 
         if (uri != null) {
-            val openedDir = File(cacheDir, "opened_pdfs").apply {
+            val type = intent.type ?: contentResolver.getType(uri) ?: ""
+            val uriString = uri.toString().lowercase()
+            val isDocx = type.contains("word") || type.contains("msword") || uriString.endsWith(".docx") || uriString.endsWith(".doc")
+
+            val openedDir = File(cacheDir, "opened_files").apply {
                 if (!exists()) {
                     mkdirs()
                 }
             }
-            val targetFile = File(openedDir, "dokumen_${System.currentTimeMillis()}.pdf")
+            val extension = if (isDocx) "docx" else "pdf"
+            val targetFile = File(openedDir, "dokumen_${System.currentTimeMillis()}.$extension")
             try {
                 contentResolver.openInputStream(uri)?.use { input ->
                     FileOutputStream(targetFile).use { output ->
@@ -68,7 +69,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 if (targetFile.exists() && targetFile.length() > 0) {
-                    return PdfPreviewNavKey(targetFile.absolutePath)
+                    return if (isDocx) {
+                        DocxViewerNavKey(targetFile.absolutePath)
+                    } else {
+                        PdfPreviewNavKey(targetFile.absolutePath)
+                    }
                 }
             } catch (_: Exception) {
             }

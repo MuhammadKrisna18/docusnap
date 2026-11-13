@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -51,6 +52,7 @@ import androidx.navigation3.runtime.NavKey
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import com.krisna.an1adz.DocxViewerNavKey
 import com.krisna.an1adz.PdfPreviewNavKey
 import com.krisna.an1adz.SignatureNavKey
 import com.krisna.an1adz.core.pdf.FilterType
@@ -99,6 +101,9 @@ fun MainScreen(
             when (event) {
                 is MainNavigationEvent.OpenPreview -> {
                     onNavigate(PdfPreviewNavKey(event.filePath))
+                }
+                is MainNavigationEvent.OpenDocx -> {
+                    onNavigate(DocxViewerNavKey(event.filePath))
                 }
                 is MainNavigationEvent.ShowToast -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
@@ -149,6 +154,14 @@ fun MainScreen(
     ) { uri ->
         if (uri != null) {
             viewModel.openExternalPdf(uri)
+        }
+    }
+
+    val docxPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.openExternalDocx(uri)
         }
     }
 
@@ -295,6 +308,28 @@ fun MainScreen(
                         subtitle = "PNG Transparan",
                         modifier = Modifier.weight(1f),
                         onClick = { onNavigate(SignatureNavKey) }
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    SecondaryActionCard(
+                        icon = Icons.AutoMirrored.Filled.Article,
+                        title = "Dokumen Word",
+                        subtitle = "DOCX, DOC & Ekspor PDF",
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            docxPickerLauncher.launch(
+                                arrayOf(
+                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                    "application/msword"
+                                )
+                            )
+                        }
                     )
                 }
             }
