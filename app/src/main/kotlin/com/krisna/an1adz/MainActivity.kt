@@ -54,13 +54,18 @@ class MainActivity : ComponentActivity() {
             val type = intent.type ?: contentResolver.getType(uri) ?: ""
             val uriString = uri.toString().lowercase()
             val isDocx = type.contains("word") || type.contains("msword") || uriString.endsWith(".docx") || uriString.endsWith(".doc")
+            val isPptx = type.contains("presentation") || type.contains("powerpoint") || uriString.endsWith(".pptx") || uriString.endsWith(".ppt")
 
             val openedDir = File(cacheDir, "opened_files").apply {
                 if (!exists()) {
                     mkdirs()
                 }
             }
-            val extension = if (isDocx) "docx" else "pdf"
+            val extension = when {
+                isDocx -> "docx"
+                isPptx -> "pptx"
+                else -> "pdf"
+            }
             val targetFile = File(openedDir, "dokumen_${System.currentTimeMillis()}.$extension")
             try {
                 contentResolver.openInputStream(uri)?.use { input ->
@@ -69,10 +74,10 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 if (targetFile.exists() && targetFile.length() > 0) {
-                    return if (isDocx) {
-                        DocxViewerNavKey(targetFile.absolutePath)
-                    } else {
-                        PdfPreviewNavKey(targetFile.absolutePath)
+                    return when {
+                        isDocx -> DocxViewerNavKey(targetFile.absolutePath)
+                        isPptx -> PptxViewerNavKey(targetFile.absolutePath)
+                        else -> PdfPreviewNavKey(targetFile.absolutePath)
                     }
                 }
             } catch (_: Exception) {

@@ -70,6 +70,14 @@ class DocxViewerViewModelTest {
                 Result.success(File.createTempFile("exported", ".pdf"))
             }
         }
+
+        override suspend fun parsePptx(file: File): Result<com.krisna.an1adz.core.office.pptx.PptxPresentation> {
+            return Result.failure(UnsupportedOperationException())
+        }
+
+        override suspend fun exportPptxToPdf(presentation: com.krisna.an1adz.core.office.pptx.PptxPresentation, outputTitle: String): Result<File> {
+            return Result.failure(UnsupportedOperationException())
+        }
     }
 
     @Before

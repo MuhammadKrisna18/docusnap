@@ -14,3 +14,6 @@ data object SignatureNavKey : NavKey
 
 @Serializable
 data class DocxViewerNavKey(val filePath: String) : NavKey
+
+@Serializable
+data class PptxViewerNavKey(val filePath: String) : NavKey

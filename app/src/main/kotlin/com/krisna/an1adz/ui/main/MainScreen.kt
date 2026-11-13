@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Slideshow
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,6 +55,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.krisna.an1adz.DocxViewerNavKey
 import com.krisna.an1adz.PdfPreviewNavKey
+import com.krisna.an1adz.PptxViewerNavKey
 import com.krisna.an1adz.SignatureNavKey
 import com.krisna.an1adz.core.pdf.FilterType
 import com.krisna.an1adz.ui.main.components.DeleteConfirmationDialog
@@ -104,6 +106,9 @@ fun MainScreen(
                 }
                 is MainNavigationEvent.OpenDocx -> {
                     onNavigate(DocxViewerNavKey(event.filePath))
+                }
+                is MainNavigationEvent.OpenPptx -> {
+                    onNavigate(PptxViewerNavKey(event.filePath))
                 }
                 is MainNavigationEvent.ShowToast -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
@@ -162,6 +167,14 @@ fun MainScreen(
     ) { uri ->
         if (uri != null) {
             viewModel.openExternalDocx(uri)
+        }
+    }
+
+    val pptxPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.openExternalPptx(uri)
         }
     }
 
@@ -320,13 +333,28 @@ fun MainScreen(
                     SecondaryActionCard(
                         icon = Icons.AutoMirrored.Filled.Article,
                         title = "Dokumen Word",
-                        subtitle = "DOCX, DOC & Ekspor PDF",
+                        subtitle = "DOCX, DOC & PDF",
                         modifier = Modifier.weight(1f),
                         onClick = {
                             docxPickerLauncher.launch(
                                 arrayOf(
                                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                                     "application/msword"
+                                )
+                            )
+                        }
+                    )
+
+                    SecondaryActionCard(
+                        icon = Icons.Default.Slideshow,
+                        title = "Presentasi PPT",
+                        subtitle = "PPTX, PPT & Slide",
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            pptxPickerLauncher.launch(
+                                arrayOf(
+                                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                                    "application/vnd.ms-powerpoint"
                                 )
                             )
                         }

@@ -15,6 +15,8 @@ import com.krisna.an1adz.ui.main.MainScreen
 import com.krisna.an1adz.ui.main.MainScreenViewModel
 import com.krisna.an1adz.ui.office.docx.DocxViewerScreen
 import com.krisna.an1adz.ui.office.docx.DocxViewerViewModel
+import com.krisna.an1adz.ui.office.pptx.PptxViewerScreen
+import com.krisna.an1adz.ui.office.pptx.PptxViewerViewModel
 import com.krisna.an1adz.ui.preview.PdfPreviewScreen
 import com.krisna.an1adz.ui.preview.PdfPreviewViewModel
 import com.krisna.an1adz.ui.signature.SignatureScreen
@@ -72,6 +74,20 @@ fun MainNavigation(initialNavKey: NavKey = Main) {
                 }
                 DocxViewerScreen(
                     viewModel = docxViewModel,
+                    onBackClick = { backStack.removeLastOrNull() },
+                    onNavigateToPdf = { pdfPath ->
+                        backStack.add(PdfPreviewNavKey(pdfPath))
+                    }
+                )
+            }
+            entry<PptxViewerNavKey> { key ->
+                val pptxViewModel: PptxViewerViewModel = viewModel(
+                    key = key.filePath
+                ) {
+                    PptxViewerViewModel(key.filePath, officeRepository)
+                }
+                PptxViewerScreen(
+                    viewModel = pptxViewModel,
                     onBackClick = { backStack.removeLastOrNull() },
                     onNavigateToPdf = { pdfPath ->
                         backStack.add(PdfPreviewNavKey(pdfPath))

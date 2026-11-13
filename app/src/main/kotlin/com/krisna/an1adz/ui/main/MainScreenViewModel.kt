@@ -38,6 +38,7 @@ sealed interface UpdateUiState {
 sealed interface MainNavigationEvent {
     data class OpenPreview(val filePath: String) : MainNavigationEvent
     data class OpenDocx(val filePath: String) : MainNavigationEvent
+    data class OpenPptx(val filePath: String) : MainNavigationEvent
     data class ShowToast(val message: String) : MainNavigationEvent
 }
 
@@ -159,6 +160,21 @@ class MainScreenViewModel(
                 }
                 .onFailure { throwable ->
                     _uiState.value = MainUiState.Error(throwable.localizedMessage ?: "Gagal membuka dokumen Word")
+                }
+        }
+    }
+
+    fun openExternalPptx(uri: Uri) {
+        viewModelScope.launch {
+            if (officeRepository == null) return@launch
+            _uiState.value = MainUiState.Processing("Membuka slide presentasi...")
+            officeRepository.importOfficeDocument(uri, "pptx")
+                .onSuccess { file ->
+                    _uiState.value = MainUiState.Idle
+                    _eventChannel.send(MainNavigationEvent.OpenPptx(file.absolutePath))
+                }
+                .onFailure { throwable ->
+                    _uiState.value = MainUiState.Error(throwable.localizedMessage ?: "Gagal membuka presentasi PPT")
                 }
         }
     }
