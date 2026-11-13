@@ -138,6 +138,41 @@ class PptxViewerViewModelTest {
         assertEquals("Pengenalan DocuSnap", success.presentation.title)
         assertEquals(3, success.presentation.totalSlides)
         assertEquals(0, success.currentSlideIndex)
+        assertEquals(1.0f, success.fontScale, 0.001f)
+
+        tempFile.delete()
+    }
+
+    @Test
+    fun fontScale_increaseAndDecrease_boundedProperly() = testScope.runTest {
+        val tempFile = File.createTempFile("test_pres", ".pptx")
+        val repo = FakeOfficeRepository(fakePresentation)
+        val viewModel = PptxViewerViewModel(tempFile.absolutePath, repo)
+
+        advanceUntilIdle()
+
+        viewModel.increaseFontScale()
+        var success = viewModel.uiState.value as PptxViewerUiState.Success
+        assertEquals(1.15f, success.fontScale, 0.01f)
+
+        viewModel.increaseFontScale()
+        viewModel.increaseFontScale()
+        viewModel.increaseFontScale()
+        viewModel.increaseFontScale()
+        viewModel.increaseFontScale()
+        viewModel.increaseFontScale()
+        success = viewModel.uiState.value as PptxViewerUiState.Success
+        assertTrue(success.fontScale <= 1.8f)
+
+        viewModel.resetFontScale()
+        success = viewModel.uiState.value as PptxViewerUiState.Success
+        assertEquals(1.0f, success.fontScale, 0.001f)
+
+        viewModel.decreaseFontScale()
+        viewModel.decreaseFontScale()
+        viewModel.decreaseFontScale()
+        success = viewModel.uiState.value as PptxViewerUiState.Success
+        assertTrue(success.fontScale >= 0.75f)
 
         tempFile.delete()
     }
@@ -250,4 +285,3 @@ class PptxViewerViewModelTest {
         tempFile.delete()
     }
 }
-

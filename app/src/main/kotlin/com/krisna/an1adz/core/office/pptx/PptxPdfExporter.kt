@@ -96,7 +96,7 @@ class PptxPdfExporter {
 
                 var currentY = marginTop
 
-                val slideTitle = slide.title ?: "Slide $slideNum"
+                val slideTitle = slide.title?.takeIf { !it.startsWith("Slide ", ignoreCase = true) } ?: "Slide $slideNum"
                 val titleLayout = createStaticLayout(slideTitle, titlePaint, contentWidth - 20, Layout.Alignment.ALIGN_NORMAL)
                 canvas.save()
                 canvas.translate(marginLeft + 16f, currentY)
@@ -108,7 +108,18 @@ class PptxPdfExporter {
                     if (currentY > pageHeight - marginBottom - 30f) break
 
                     when (element) {
-                        is PptxElement.Title -> Unit
+                        is PptxElement.Title -> {
+                            if (!element.text.trim().equals(slideTitle.trim(), ignoreCase = true)) {
+                                val layout = createStaticLayout(element.text, titlePaint, contentWidth, Layout.Alignment.ALIGN_NORMAL)
+                                if (currentY + layout.height <= pageHeight - marginBottom) {
+                                    canvas.save()
+                                    canvas.translate(marginLeft, currentY)
+                                    layout.draw(canvas)
+                                    canvas.restore()
+                                    currentY += layout.height + 12f
+                                }
+                            }
+                        }
 
                         is PptxElement.Subtitle -> {
                             val layout = createStaticLayout(element.text, subtitlePaint, contentWidth, Layout.Alignment.ALIGN_NORMAL)
@@ -221,4 +232,3 @@ class PptxPdfExporter {
             .build()
     }
 }
-

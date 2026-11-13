@@ -98,9 +98,12 @@ class PptxParser {
             }
         }
 
-        val presentationTitle = slides.firstOrNull()?.title
-            ?.takeIf { it.isNotBlank() }
-            ?: fileName.substringBeforeLast(".")
+        val candidateTitle = slides.firstOrNull()?.title?.trim()
+        val presentationTitle = if (!candidateTitle.isNullOrBlank() && !candidateTitle.startsWith("Slide ", ignoreCase = true)) {
+            candidateTitle
+        } else {
+            fileName.substringBeforeLast(".")
+        }
 
         return PptxPresentation(
             fileName = fileName,
@@ -175,9 +178,18 @@ class PptxParser {
                             isTitleShape = false
                             isSubtitleShape = false
                         }
+                        "cNvPr" -> {
+                            val nameAttr = parser.getAttributeValue(null, "name")?.lowercase() ?: ""
+                            if (nameAttr.contains("title") || nameAttr.contains("judul") || nameAttr.contains("heading")) {
+                                isTitleShape = true
+                            } else if (nameAttr.contains("subtitle") || nameAttr.contains("subjudul")) {
+                                isSubtitleShape = true
+                            }
+                        }
                         "ph" -> {
                             val type = parser.getAttributeValue(null, "type")?.lowercase()
-                            if (type == "title" || type == "ctrtitle") {
+                            val idx = parser.getAttributeValue(null, "idx")
+                            if (type == "title" || type == "ctrtitle" || (type == null && idx == "0")) {
                                 isTitleShape = true
                             } else if (type == "subtitle" || type == "sub") {
                                 isSubtitleShape = true
@@ -188,8 +200,17 @@ class PptxParser {
                             isBulletParagraph = false
                             currentParagraphRuns.clear()
                         }
-                        "buChar", "buFont" -> {
+                        "pPr" -> {
+                            val lvl = parser.getAttributeValue(null, "lvl")?.toIntOrNull() ?: 0
+                            if (lvl > 0) {
+                                isBulletParagraph = true
+                            }
+                        }
+                        "buChar", "buFont", "buAutoNum", "buBlip", "buSzPct", "buSzPts" -> {
                             isBulletParagraph = true
+                        }
+                        "buNone" -> {
+                            isBulletParagraph = false
                         }
                         "r" -> {
                             inRun = true
@@ -208,6 +229,10 @@ class PptxParser {
                             isUnderline = uVal != null && uVal != "none"
                             val strikeVal = parser.getAttributeValue(null, "strike")
                             isStrike = strikeVal != null && strikeVal != "noStrike"
+                            val szVal = parser.getAttributeValue(null, "sz")?.toIntOrNull() ?: 0
+                            if (szVal >= 2200 && slideTitle == null && !isSubtitleShape) {
+                                isTitleShape = true
+                            }
                         }
                         "srgbClr" -> {
                             colorHex = parser.getAttributeValue(null, "val")
@@ -223,6 +248,11 @@ class PptxParser {
                                         elements.add(PptxElement.Image(bytes = imageBytes, description = target))
                                     }
                                 }
+                            }
+                        }
+                        "br" -> {
+                            if (inParagraph) {
+                                currentParagraphRuns.add(TextRun(text = "\n"))
                             }
                         }
                         "t" -> {
@@ -249,6 +279,19 @@ class PptxParser {
                             if (inParagraph) {
                                 val fullText = currentParagraphRuns.joinToString("") { it.text }.trim()
                                 if (fullText.isNotEmpty()) {
+                                    val startsWithBulletSymbol = fullText.startsWith("•") ||
+                                            fullText.startsWith("-") ||
+                                            fullText.startsWith("–") ||
+                                            fullText.startsWith("*")
+                                    val finalIsBullet = isBulletParagraph || startsWithBulletSymbol
+                                    val finalRuns = if (startsWithBulletSymbol && !isBulletParagraph) {
+                                        val firstRun = currentParagraphRuns.first()
+                                        val cleanedText = firstRun.text.trimStart('•', '-', '–', '*', ' ')
+                                        listOf(firstRun.copy(text = cleanedText)) + currentParagraphRuns.drop(1)
+                                    } else {
+                                        currentParagraphRuns.toList()
+                                    }
+
                                     if (isTitleShape && slideTitle == null) {
                                         slideTitle = fullText
                                         elements.add(PptxElement.Title(fullText))
@@ -257,8 +300,8 @@ class PptxParser {
                                     } else {
                                         elements.add(
                                             PptxElement.Paragraph(
-                                                runs = currentParagraphRuns.toList(),
-                                                isBullet = isBulletParagraph
+                                                runs = finalRuns,
+                                                isBullet = finalIsBullet
                                             )
                                         )
                                     }
@@ -275,6 +318,20 @@ class PptxParser {
                 }
             }
             eventType = parser.next()
+        }
+
+        if (slideTitle == null || slideTitle.startsWith("Slide ", ignoreCase = true)) {
+            val firstTitleElement = elements.filterIsInstance<PptxElement.Title>().firstOrNull()
+            if (firstTitleElement != null) {
+                slideTitle = firstTitleElement.text.trim()
+            } else if (elements.isNotEmpty() && elements.first() is PptxElement.Paragraph) {
+                val firstPara = elements.first() as PptxElement.Paragraph
+                val paraText = firstPara.runs.joinToString("") { it.text }.trim()
+                if (paraText.isNotEmpty() && paraText.length <= 120 && !firstPara.isBullet) {
+                    slideTitle = paraText
+                    elements[0] = PptxElement.Title(paraText)
+                }
+            }
         }
 
         return PptxSlide(
@@ -352,9 +409,16 @@ class PptxParser {
             }
         }
 
+        val candidateTitle = safeSlides.first().title?.trim()
+        val presentationTitle = if (!candidateTitle.isNullOrBlank() && !candidateTitle.startsWith("Slide ", ignoreCase = true)) {
+            candidateTitle
+        } else {
+            file.name.substringBeforeLast(".")
+        }
+
         return PptxPresentation(
             fileName = file.name,
-            title = safeSlides.first().title ?: file.name.substringBeforeLast("."),
+            title = presentationTitle,
             slides = safeSlides,
             totalSlides = safeSlides.size,
             totalWords = totalWords
@@ -385,4 +449,3 @@ class PptxParser {
         )
     }
 }
-

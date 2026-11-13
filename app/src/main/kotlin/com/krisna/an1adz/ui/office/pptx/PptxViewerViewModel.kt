@@ -18,6 +18,7 @@ sealed interface PptxViewerUiState {
     data class Success(
         val presentation: PptxPresentation,
         val currentSlideIndex: Int = 0,
+        val fontScale: Float = 1.0f,
         val isPresenterMode: Boolean = false,
         val isOverviewVisible: Boolean = false,
         val isExportingPdf: Boolean = false
@@ -93,6 +94,30 @@ class PptxViewerViewModel(
         }
     }
 
+    fun increaseFontScale() {
+        _uiState.update { current ->
+            if (current is PptxViewerUiState.Success) {
+                current.copy(fontScale = (current.fontScale + 0.15f).coerceAtMost(1.8f))
+            } else current
+        }
+    }
+
+    fun decreaseFontScale() {
+        _uiState.update { current ->
+            if (current is PptxViewerUiState.Success) {
+                current.copy(fontScale = (current.fontScale - 0.15f).coerceAtLeast(0.75f))
+            } else current
+        }
+    }
+
+    fun resetFontScale() {
+        _uiState.update { current ->
+            if (current is PptxViewerUiState.Success) {
+                current.copy(fontScale = 1.0f)
+            } else current
+        }
+    }
+
     fun togglePresenterMode() {
         _uiState.update { current ->
             if (current is PptxViewerUiState.Success) {
@@ -139,4 +164,3 @@ class PptxViewerViewModel(
         }
     }
 }
-

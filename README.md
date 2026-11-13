@@ -51,10 +51,13 @@ Dengan antarmuka yang bersih bernuansa **Putih & Biru Langit**, DocuSnap memberi
 ---
 
 ### 📊 6. Pembaca Presentasi PowerPoint (PPTX & PPT) + Mode Presenter
-* **Penampil Slide 16:9 yang Elegan**: Tampilan slide berformat widescreen modern lengkap dengan judul, poin materi, teks berformat, dan gambar pendukung.
-* **Kendali Navigasi Fleksibel**: Geser slide dengan tombol panah, slider halaman, atau buka **Daftar Slide (*Overview Grid*)** untuk langsung melompat ke slide tertentu.
-* **Mode Presenter Layar Penuh (*Fullscreen*)**: Ubah ponsel Anda menjadi alat presentasi! Masuk ke mode layar penuh dengan latar hitam imersif, cukup ketuk sisi kanan layar untuk maju ke slide berikutnya atau sisi kiri untuk kembali.
-* **Ekspor Slide ke PDF**: Konversikan seluruh slide presentasi menjadi dokumen PDF berorientasi lanskap yang rapi.
+* **Tampilan Slide Responsif & Nyaman**: Tampilan kartu slide yang mengisi layar secara optimal untuk membaca dokumen di ponsel tanpa ruang kosong berlebih.
+* **Deteksi Judul & Struktur Akurat**: Otomatis mengenali judul slide asli, subjudul, dan poin-poin materi dengan hierarki teks yang rapi dan elegan.
+* **Pengatur Ukuran Huruf (Zoom Text)**: Perbesar atau perkecil teks materi presentasi secara fleksibel lewat tombol zoom di bilah atas.
+* **Navigasi Geser Layar (*Swipe Gestures*) & Bilah Kontrol**: Cukup usap layar ke kiri atau kanan untuk berpindah slide, atau gunakan tombol panah dan slider halaman.
+* **Daftar Slide Cepat (*Overview Grid*)**: Buka kisi ringkasan seluruh slide untuk melompat langsung ke halaman yang diinginkan dalam sekejap.
+* **Mode Presenter Layar Penuh (*Fullscreen*)**: Ubah ponsel Anda menjadi alat presentasi profesional dengan latar hitam imersif dan kontrol sentuh intuitif.
+* **Ekspor Slide ke PDF**: Konversikan seluruh slide presentasi menjadi dokumen PDF berorientasi lanskap yang rapi dan siap bagikan.
 
 ---
 

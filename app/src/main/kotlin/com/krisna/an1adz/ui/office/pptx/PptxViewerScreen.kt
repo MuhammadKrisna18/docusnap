@@ -1,9 +1,6 @@
 package com.krisna.an1adz.ui.office.pptx
 
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +32,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -162,6 +161,7 @@ fun PptxViewerScreen(
                     slide = state.presentation.slides.getOrNull(state.currentSlideIndex) ?: state.presentation.slides.first(),
                     slideIndex = state.currentSlideIndex,
                     totalSlides = state.presentation.totalSlides,
+                    fontScale = state.fontScale,
                     onNext = { viewModel.nextSlide() },
                     onPrev = { viewModel.previousSlide() },
                     onExit = { viewModel.togglePresenterMode() }
@@ -173,6 +173,8 @@ fun PptxViewerScreen(
                     onNext = { viewModel.nextSlide() },
                     onPrev = { viewModel.previousSlide() },
                     onGoToSlide = { viewModel.goToSlide(it) },
+                    onIncreaseFont = { viewModel.increaseFontScale() },
+                    onDecreaseFont = { viewModel.decreaseFontScale() },
                     onTogglePresenter = { viewModel.togglePresenterMode() },
                     onToggleOverview = { viewModel.toggleOverview() },
                     onExportPdf = { viewModel.exportToPdf() }
@@ -190,6 +192,8 @@ private fun NormalModeView(
     onNext: () -> Unit,
     onPrev: () -> Unit,
     onGoToSlide: (Int) -> Unit,
+    onIncreaseFont: () -> Unit,
+    onDecreaseFont: () -> Unit,
     onTogglePresenter: () -> Unit,
     onToggleOverview: () -> Unit,
     onExportPdf: () -> Unit
@@ -224,6 +228,24 @@ private fun NormalModeView(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = onDecreaseFont,
+                        enabled = state.fontScale > 0.75f
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ZoomOut,
+                            contentDescription = "Perkecil Huruf"
+                        )
+                    }
+                    IconButton(
+                        onClick = onIncreaseFont,
+                        enabled = state.fontScale < 1.75f
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ZoomIn,
+                            contentDescription = "Perbesar Huruf"
+                        )
+                    }
                     IconButton(onClick = onToggleOverview) {
                         Icon(
                             imageVector = Icons.Default.GridView,
@@ -267,24 +289,39 @@ private fun NormalModeView(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .pointerInput(state.currentSlideIndex) {
+                        var dragOffsetX = 0f
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                if (dragOffsetX < -50f) {
+                                    onNext()
+                                } else if (dragOffsetX > 50f) {
+                                    onPrev()
+                                }
+                                dragOffsetX = 0f
+                            },
+                            onHorizontalDrag = { _, dragAmount ->
+                                dragOffsetX += dragAmount
+                            }
+                        )
+                    }
             ) {
                 SlideCard(
                     slide = currentSlide,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(16f / 9f)
+                    totalSlides = state.presentation.totalSlides,
+                    fontScale = state.fontScale,
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             SlideControllerBar(
                 currentIndex = state.currentSlideIndex,
@@ -314,6 +351,8 @@ private fun NormalModeView(
 @Composable
 private fun SlideCard(
     slide: PptxSlide,
+    totalSlides: Int,
+    fontScale: Float = 1.0f,
     modifier: Modifier = Modifier,
     isDarkTheme: Boolean = false
 ) {
@@ -321,12 +360,16 @@ private fun SlideCard(
     val textColor = if (isDarkTheme) Color(0xFFE2E8F0) else Color(0xFF1E293B)
     val borderColor = if (isDarkTheme) Color(0xFF334155) else Color(0xFFE2E8F0)
 
+    val validSlideTitle = slide.title?.takeIf {
+        it.isNotBlank() && !it.startsWith("Slide ", ignoreCase = true)
+    }
+
     Card(
         modifier = modifier
             .border(1.5.dp, borderColor, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = cardBg),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(
             modifier = Modifier
@@ -338,58 +381,92 @@ private fun SlideCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .width(4.dp)
-                            .height(20.dp)
-                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = slide.title ?: "Slide ${slide.slideNumber}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = textColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "SLIDE ${slide.slideNumber} / $totalSlides",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                ) {
-                    Text(
-                        text = "${slide.slideNumber}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                if (fontScale != 1.0f) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Text(
+                            text = "${(fontScale * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                if (validSlideTitle != null) {
+                    item {
+                        Text(
+                            text = validSlideTitle,
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontSize = (21.sp.value * fontScale).sp,
+                                lineHeight = (28.sp.value * fontScale).sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            color = if (isDarkTheme) Color(0xFF60A5FA) else MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+
                 items(slide.elements) { element ->
                     when (element) {
-                        is PptxElement.Title -> Unit
+                        is PptxElement.Title -> {
+                            if (validSlideTitle == null || !element.text.trim().equals(validSlideTitle.trim(), ignoreCase = true)) {
+                                Text(
+                                    text = element.text,
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontSize = (20.sp.value * fontScale).sp,
+                                        lineHeight = (26.sp.value * fontScale).sp
+                                    ),
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDarkTheme) Color(0xFF60A5FA) else MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                         is PptxElement.Subtitle -> {
                             Text(
                                 text = element.text,
-                                style = MaterialTheme.typography.titleSmall,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = (16.sp.value * fontScale).sp,
+                                    lineHeight = (22.sp.value * fontScale).sp
+                                ),
                                 fontWeight = FontWeight.SemiBold,
-                                color = textColor.copy(alpha = 0.8f)
+                                color = textColor.copy(alpha = 0.85f)
                             )
                         }
                         is PptxElement.Paragraph -> {
@@ -410,7 +487,10 @@ private fun SlideCard(
                             }
                             Text(
                                 text = annotated,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = (14.5.sp.value * fontScale).sp,
+                                    lineHeight = (21.sp.value * fontScale).sp
+                                ),
                                 color = textColor
                             )
                         }
@@ -425,11 +505,25 @@ private fun SlideCard(
                                     model = element.bytes,
                                     contentDescription = element.description,
                                     modifier = Modifier
-                                        .height(140.dp)
+                                        .fillMaxWidth(0.95f)
                                         .clip(RoundedCornerShape(8.dp))
                                 )
                             }
                         }
+                    }
+                }
+
+                if (validSlideTitle == null && slide.elements.isEmpty()) {
+                    item {
+                        Text(
+                            text = "Slide ini tidak memiliki konten teks atau gambar.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = textColor.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp)
+                        )
                     }
                 }
             }
@@ -535,17 +629,17 @@ private fun PresenterModeView(
     slide: PptxSlide,
     slideIndex: Int,
     totalSlides: Int,
+    fontScale: Float = 1.0f,
     onNext: () -> Unit,
     onPrev: () -> Unit,
     onExit: () -> Unit
 ) {
-    var dragOffsetX = 0f
-
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(Unit) {
+            .pointerInput(slideIndex) {
+                var dragOffsetX = 0f
                 detectHorizontalDragGestures(
                     onDragEnd = {
                         if (dragOffsetX < -50f) {
@@ -569,6 +663,8 @@ private fun PresenterModeView(
         ) {
             SlideCard(
                 slide = slide,
+                totalSlides = totalSlides,
+                fontScale = fontScale * 1.1f,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f),
