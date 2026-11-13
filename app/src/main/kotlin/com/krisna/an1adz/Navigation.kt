@@ -12,6 +12,8 @@ import com.krisna.an1adz.ui.main.MainScreen
 import com.krisna.an1adz.ui.main.MainScreenViewModel
 import com.krisna.an1adz.ui.preview.PdfPreviewScreen
 import com.krisna.an1adz.ui.preview.PdfPreviewViewModel
+import com.krisna.an1adz.ui.signature.SignatureScreen
+import com.krisna.an1adz.ui.signature.SignatureViewModel
 
 @Composable
 fun MainNavigation() {
@@ -40,6 +42,15 @@ fun MainNavigation() {
                 }
                 PdfPreviewScreen(
                     viewModel = previewViewModel,
+                    onBackClick = { backStack.removeLastOrNull() }
+                )
+            }
+            entry<SignatureNavKey> {
+                val signatureViewModel: SignatureViewModel = viewModel {
+                    SignatureViewModel(context)
+                }
+                SignatureScreen(
+                    viewModel = signatureViewModel,
                     onBackClick = { backStack.removeLastOrNull() }
                 )
             }

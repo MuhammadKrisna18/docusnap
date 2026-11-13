@@ -8,3 +8,6 @@ data object Main : NavKey
 
 @Serializable
 data class PdfPreviewNavKey(val filePath: String) : NavKey
+
+@Serializable
+data object SignatureNavKey : NavKey

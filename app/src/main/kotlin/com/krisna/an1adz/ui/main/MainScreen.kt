@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -51,6 +52,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.krisna.an1adz.PdfPreviewNavKey
+import com.krisna.an1adz.SignatureNavKey
 import com.krisna.an1adz.core.pdf.FilterType
 import com.krisna.an1adz.ui.main.components.DeleteConfirmationDialog
 import com.krisna.an1adz.ui.main.components.EmptyDocumentsCard
@@ -262,6 +264,16 @@ fun MainScreen(
                         }
                     )
                 }
+            }
+
+            item {
+                SecondaryActionCard(
+                    icon = Icons.Default.Draw,
+                    title = "Tanda Tangan Digital",
+                    subtitle = "Buat & simpan tanda tangan PNG transparan tanpa background",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onNavigate(SignatureNavKey) }
+                )
             }
 
             item {

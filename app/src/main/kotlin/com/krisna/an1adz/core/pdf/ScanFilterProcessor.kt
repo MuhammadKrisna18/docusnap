@@ -10,7 +10,6 @@ interface ScanFilterProcessor {
 
 class DefaultScanFilterProcessor : ScanFilterProcessor {
 
-    // Precomputed Look-Up Table for B&W binarization & tone mapping
     private val bwLut = IntArray(256) { v ->
         val low = 85f
         val high = 200f
@@ -33,10 +32,6 @@ class DefaultScanFilterProcessor : ScanFilterProcessor {
         }
     }
 
-    /**
-     * Adaptive document binarization with background illumination compensation.
-     * Removes shadows, levels paper to clean pure white, and hardens text to deep solid black.
-     */
     private fun processBlackAndWhite(src: Bitmap): Bitmap {
         val width = src.width
         val height = src.height
@@ -67,7 +62,6 @@ class DefaultScanFilterProcessor : ScanFilterProcessor {
                 val bgVal = bgPixels[i] and 0xFF
                 val bgLum = if (bgVal < 30) 30 else bgVal
 
-                // Illumination-normalized luminance (0..255)
                 val norm = min(255, (lum * 255) / bgLum)
                 val finalGray = bwLut[norm]
 
@@ -82,10 +76,6 @@ class DefaultScanFilterProcessor : ScanFilterProcessor {
         return output
     }
 
-    /**
-     * Color document enhancement with background illumination compensation.
-     * Removes shadows, whitens background paper, but preserves ink colors (stamps, pens, photos).
-     */
     private fun processColorEnhanced(src: Bitmap): Bitmap {
         val width = src.width
         val height = src.height
@@ -115,12 +105,10 @@ class DefaultScanFilterProcessor : ScanFilterProcessor {
                 val bgVal = bgPixels[i] and 0xFF
                 val bgLum = if (bgVal < 30) 30 else bgVal
 
-                // Normalize each color channel by the local background paper illumination
                 val normR = min(255, (r * 255) / bgLum)
                 val normG = min(255, (g * 255) / bgLum)
                 val normB = min(255, (b * 255) / bgLum)
 
-                // High-contrast document enhancement curve
                 val outR = enhanceChannel(normR)
                 val outG = enhanceChannel(normG)
                 val outB = enhanceChannel(normB)
@@ -150,14 +138,6 @@ class DefaultScanFilterProcessor : ScanFilterProcessor {
         }
     }
 
-    /**
-     * Estimates the 2D background paper illumination field B(x, y).
-     * 1. Downscales to a fast thumbnail.
-     * 2. Computes grayscale luminance.
-     * 3. Applies a separable 2D Max-filter to find the local paper brightness (erasing text).
-     * 4. Applies a smoothing blur to eliminate harsh transitions.
-     * 5. Upscales back to full resolution using native hardware bilinear interpolation.
-     */
     private fun createIlluminationMap(src: Bitmap, targetW: Int, targetH: Int): Bitmap {
         val thumbW = 160
         val thumbH = max(1, (160f * targetH / targetW).toInt())
@@ -176,7 +156,6 @@ class DefaultScanFilterProcessor : ScanFilterProcessor {
             lum[i] = (77 * r + 150 * g + 29 * b) shr 8
         }
 
-        // Separable 2D Max-filter (radius = 5 in thumbnail space ~= 75px in full-res)
         val maxH = IntArray(thumbW * thumbH)
         val radius = 5
         for (row in 0 until thumbH) {
@@ -207,7 +186,6 @@ class DefaultScanFilterProcessor : ScanFilterProcessor {
             }
         }
 
-        // Fast Box Blur (radius = 4) to ensure smooth gradient lighting across the document
         val blurRadius = 4
         val blurH = IntArray(thumbW * thumbH)
         for (row in 0 until thumbH) {

@@ -2,7 +2,6 @@ package com.krisna.an1adz.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light Blue Palette (Warna Biru Muda & Putih)
 val LightBluePrimary = Color(0xFF0284C7)
 val LightBlueOnPrimary = Color(0xFFFFFFFF)
 val LightBluePrimaryContainer = Color(0xFFE0F2FE)
@@ -18,7 +17,6 @@ val LightBlueOnTertiary = Color(0xFFFFFFFF)
 val LightBlueTertiaryContainer = Color(0xFFBAE6FD)
 val LightBlueOnTertiaryContainer = Color(0xFF082F49)
 
-// Base White Surfaces & Backgrounds
 val LightBackground = Color(0xFFF8FAFC)
 val LightOnBackground = Color(0xFF0F172A)
 val LightSurface = Color(0xFFFFFFFF)
@@ -28,7 +26,6 @@ val LightOnSurfaceVariant = Color(0xFF475569)
 val LightOutline = Color(0xFFCBD5E1)
 val LightOutlineVariant = Color(0xFFE2E8F0)
 
-// Dark Theme Palette (Biru Muda & Slate)
 val DarkPrimary = Color(0xFF7DD3FC)
 val DarkOnPrimary = Color(0xFF082F49)
 val DarkPrimaryContainer = Color(0xFF0369A1)
