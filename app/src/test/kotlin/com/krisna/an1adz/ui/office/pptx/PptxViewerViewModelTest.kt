@@ -104,6 +104,14 @@ class PptxViewerViewModelTest {
                 Result.success(File.createTempFile("exported_pptx", ".pdf"))
             }
         }
+
+        override suspend fun parseSpreadsheet(file: File): Result<com.krisna.an1adz.core.office.spreadsheet.SpreadsheetDocument> {
+            return Result.failure(UnsupportedOperationException())
+        }
+
+        override suspend fun exportSpreadsheetToPdf(document: com.krisna.an1adz.core.office.spreadsheet.SpreadsheetDocument, sheetIndex: Int, outputTitle: String): Result<File> {
+            return Result.failure(UnsupportedOperationException())
+        }
     }
 
     @Before
@@ -242,3 +250,4 @@ class PptxViewerViewModelTest {
         tempFile.delete()
     }
 }
+

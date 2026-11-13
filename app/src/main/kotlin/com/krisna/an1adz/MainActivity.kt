@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
             val uriString = uri.toString().lowercase()
             val isDocx = type.contains("word") || type.contains("msword") || uriString.endsWith(".docx") || uriString.endsWith(".doc")
             val isPptx = type.contains("presentation") || type.contains("powerpoint") || uriString.endsWith(".pptx") || uriString.endsWith(".ppt")
+            val isSpreadsheet = type.contains("spreadsheet") || type.contains("excel") || type.contains("csv") || uriString.endsWith(".xlsx") || uriString.endsWith(".xls") || uriString.endsWith(".csv") || uriString.endsWith(".tsv")
 
             val openedDir = File(cacheDir, "opened_files").apply {
                 if (!exists()) {
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
             val extension = when {
                 isDocx -> "docx"
                 isPptx -> "pptx"
+                isSpreadsheet -> if (uriString.endsWith(".csv")) "csv" else "xlsx"
                 else -> "pdf"
             }
             val targetFile = File(openedDir, "dokumen_${System.currentTimeMillis()}.$extension")
@@ -77,6 +79,7 @@ class MainActivity : ComponentActivity() {
                     return when {
                         isDocx -> DocxViewerNavKey(targetFile.absolutePath)
                         isPptx -> PptxViewerNavKey(targetFile.absolutePath)
+                        isSpreadsheet -> SpreadsheetViewerNavKey(targetFile.absolutePath)
                         else -> PdfPreviewNavKey(targetFile.absolutePath)
                     }
                 }

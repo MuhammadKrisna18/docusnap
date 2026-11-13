@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Slideshow
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -57,6 +58,7 @@ import com.krisna.an1adz.DocxViewerNavKey
 import com.krisna.an1adz.PdfPreviewNavKey
 import com.krisna.an1adz.PptxViewerNavKey
 import com.krisna.an1adz.SignatureNavKey
+import com.krisna.an1adz.SpreadsheetViewerNavKey
 import com.krisna.an1adz.core.pdf.FilterType
 import com.krisna.an1adz.ui.main.components.DeleteConfirmationDialog
 import com.krisna.an1adz.ui.main.components.EmptyDocumentsCard
@@ -109,6 +111,9 @@ fun MainScreen(
                 }
                 is MainNavigationEvent.OpenPptx -> {
                     onNavigate(PptxViewerNavKey(event.filePath))
+                }
+                is MainNavigationEvent.OpenSpreadsheet -> {
+                    onNavigate(SpreadsheetViewerNavKey(event.filePath))
                 }
                 is MainNavigationEvent.ShowToast -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
@@ -175,6 +180,14 @@ fun MainScreen(
     ) { uri ->
         if (uri != null) {
             viewModel.openExternalPptx(uri)
+        }
+    }
+
+    val spreadsheetPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.openExternalSpreadsheet(uri)
         }
     }
 
@@ -355,6 +368,30 @@ fun MainScreen(
                                 arrayOf(
                                     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                                     "application/vnd.ms-powerpoint"
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    SecondaryActionCard(
+                        icon = Icons.Default.TableChart,
+                        title = "Spreadsheet Excel",
+                        subtitle = "XLSX, XLS, CSV & Ekspor PDF",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            spreadsheetPickerLauncher.launch(
+                                arrayOf(
+                                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    "application/vnd.ms-excel",
+                                    "text/csv",
+                                    "text/tab-separated-values"
                                 )
                             )
                         }

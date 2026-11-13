@@ -39,6 +39,7 @@ sealed interface MainNavigationEvent {
     data class OpenPreview(val filePath: String) : MainNavigationEvent
     data class OpenDocx(val filePath: String) : MainNavigationEvent
     data class OpenPptx(val filePath: String) : MainNavigationEvent
+    data class OpenSpreadsheet(val filePath: String) : MainNavigationEvent
     data class ShowToast(val message: String) : MainNavigationEvent
 }
 
@@ -175,6 +176,22 @@ class MainScreenViewModel(
                 }
                 .onFailure { throwable ->
                     _uiState.value = MainUiState.Error(throwable.localizedMessage ?: "Gagal membuka presentasi PPT")
+                }
+        }
+    }
+
+    fun openExternalSpreadsheet(uri: Uri) {
+        viewModelScope.launch {
+            if (officeRepository == null) return@launch
+            _uiState.value = MainUiState.Processing("Membuka lembar spreadsheet...")
+            val ext = if (uri.toString().lowercase().endsWith(".csv")) "csv" else "xlsx"
+            officeRepository.importOfficeDocument(uri, ext)
+                .onSuccess { file ->
+                    _uiState.value = MainUiState.Idle
+                    _eventChannel.send(MainNavigationEvent.OpenSpreadsheet(file.absolutePath))
+                }
+                .onFailure { throwable ->
+                    _uiState.value = MainUiState.Error(throwable.localizedMessage ?: "Gagal membuka spreadsheet")
                 }
         }
     }

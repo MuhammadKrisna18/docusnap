@@ -69,3 +69,4 @@ enum class DocxAlignment {
     RIGHT,
     JUSTIFY
 }
+

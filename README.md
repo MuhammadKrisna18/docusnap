@@ -1,6 +1,6 @@
 # 📄 DocuSnap - Pemindai Dokumen, Pembaca Berkas & Studio Tanda Tangan Cerdas
 
-**DocuSnap** adalah aplikasi produktivitas serba bisa untuk perangkat Android yang dirancang untuk memudahkan segala urusan dokumen Anda: memindai dokumen fisik lewat kamera, membaca berkas PDF, Word (DOCX/DOC), presentasi PowerPoint (PPTX/PPT), hingga membuat dan membubuhkan tanda tangan digital transparan secara instan, rapi, dan aman.
+**DocuSnap** adalah aplikasi produktivitas serba bisa untuk perangkat Android yang dirancang untuk memudahkan segala urusan dokumen Anda: memindai dokumen fisik lewat kamera, membaca berkas PDF, Word (DOCX/DOC), presentasi PowerPoint (PPTX/PPT), lembar kerja Spreadsheet Excel (XLSX/XLS/CSV), hingga membuat dan membubuhkan tanda tangan digital transparan secara instan, rapi, dan aman.
 
 Dengan antarmuka yang bersih bernuansa **Putih & Biru Langit**, DocuSnap memberikan pengalaman kerja yang nyaman, ringan, bebas iklan, dan **100% offline** menjaga privasi dokumen Anda.
 
@@ -58,19 +58,29 @@ Dengan antarmuka yang bersih bernuansa **Putih & Biru Langit**, DocuSnap memberi
 
 ---
 
-### 🖼️ 7. Impor Gambar & Berkas Teks
+### 📈 7. Pembaca Spreadsheet Excel (XLSX, XLS & CSV) + Ekspor ke PDF
+* **Buka Lembar Kerja & Tabel Data Mandiri**: Membaca berkas spreadsheet Excel (`.xlsx`, `.xls`) serta berkas data tabel (`.csv`, `.tsv`) secara cepat dan ringan.
+* **Tampilan Kisi Interaktif (*Interactive Grid*)**: Dilengkapi penunjuk kolom (A, B, C...) dan nomor baris (1, 2, 3...) yang rapi dengan perataan otomatis (angka di kanan, teks di kiri).
+* **Dukungan Banyak Lembar Kerja (*Multi-Sheet Tabs*)**: Beralih antar tab sheet (misal: "Sheet 1", "Laporan Keuangan", "Data Karyawan") dengan satu sentuhan.
+* **Bilah Inspeksi Sel (*Formula Bar*)**: Ketuk sel mana saja untuk membaca nilai atau teks panjang secara utuh di bilah atas tabel.
+* **Pencarian Sel & Skala Huruf**: Cari kata atau angka tertentu dalam spreadsheet dan sesuaikan ukuran huruf tabel sesuai kenyamanan mata.
+* **Ekspor Lembar Kerja ke PDF**: Mengonversi lembar spreadsheet menjadi berkas PDF berformat lanskap bergaris tabel rapi dan siap cetak.
+
+---
+
+### 🖼️ 8. Impor Gambar & Berkas Teks
 * **Ubah Foto Galeri Menjadi PDF**: Pilih satu atau puluhan foto piagam, kwitansi, atau materi pelajaran dari galeri dan susun langsung menjadi berkas PDF rapi.
 * **Impor Berkas Teks**: Membaca file `.txt`, `.csv`, `.log`, `.md`, dan menyusunnya otomatis menjadi halaman PDF.
 
 ---
 
-### 🔄 8. Pembaruan Otomatis Terpadu (*In-App Updater*)
+### 🔄 9. Pembaruan Otomatis Terpadu (*In-App Updater*)
 * Aplikasi dapat mendeteksi pembaruan versi terbaru secara otomatis langsung dari rilis GitHub resmi.
 * Anda dapat memeriksa ketersediaan versi baru kapan saja melalui tombol pembaruan di bagian atas layar.
 
 ---
 
-### 🛡️ 9. 100% Aman & Privasi Terjaga (Offline)
+### 🛡️ 10. 100% Aman & Privasi Terjaga (Offline)
 * Semua pemrosesan berkas, tanda tangan, pembacaan dokumen, dan pembuatan PDF berlangsung **langsung di dalam perangkat Anda**.
 * Tidak ada dokumen atau tanda tangan pribadi Anda yang diunggah ke server internet pihak ketiga.
 
@@ -100,6 +110,11 @@ Dengan antarmuka yang bersih bernuansa **Putih & Biru Langit**, DocuSnap memberi
 1. Di halaman utama, pilih **"Dokumen Word"** untuk file DOCX/DOC atau **"Presentasi PPT"** untuk file PPTX/PPT.
 2. Dokumen akan langsung terbuka secara cepat dan rapi.
 3. Gunakan tombol **Ekspor PDF** di bilah atas jika Anda ingin mengubahnya langsung menjadi berkas PDF.
+
+### E. Membaca Spreadsheet Excel & CSV:
+1. Di halaman utama, pilih **"Spreadsheet Excel"** untuk file XLSX, XLS, atau CSV.
+2. Jelajahi data tabel, beralih lembar (*sheet*), atau ketuk sel tertentu untuk membaca rinciannya.
+3. Gunakan tombol **Ekspor PDF** di bilah atas untuk mencetak atau membagikan tabel dalam format PDF.
 
 ---
 
