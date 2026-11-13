@@ -108,6 +108,16 @@ private class FakePdfRepository : PdfRepository {
     override suspend fun copyScannedPdf(sourceUri: Uri): Result<File> =
         Result.success(File("test.pdf"))
 
+    override suspend fun importExternalPdf(sourceUri: Uri): Result<File> =
+        Result.success(File("test.pdf"))
+
+    override suspend fun stampSignatureToPdf(
+        pdfFile: File,
+        signatureFile: File,
+        pageIndex: Int,
+        alignment: com.krisna.an1adz.core.signature.SignatureAlignment
+    ): Result<File> = Result.success(File("test.pdf"))
+
     override suspend fun renderPdfPages(pdfFile: File): Result<List<Bitmap>> =
         Result.success(emptyList())
 

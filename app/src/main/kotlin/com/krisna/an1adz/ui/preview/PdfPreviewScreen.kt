@@ -19,9 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -37,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.krisna.an1adz.core.pdf.DefaultFileExporter
 import com.krisna.an1adz.core.pdf.FileExporter
 import com.krisna.an1adz.ui.preview.components.RenameDocumentDialog
+import com.krisna.an1adz.ui.preview.components.StampSignatureDialog
 import com.krisna.an1adz.ui.preview.components.ZoomablePdfPageCard
 import kotlinx.coroutines.launch
 import java.io.File
@@ -68,9 +73,13 @@ fun PdfPreviewScreen(
     val coroutineScope = rememberCoroutineScope()
     val exporter = fileExporter ?: remember { DefaultFileExporter(context) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val readingMode by viewModel.readingMode.collectAsStateWithLifecycle()
+    val savedSignatures by viewModel.savedSignatures.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
 
     var activeFileForSaving by remember { mutableStateOf<File?>(null) }
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showStampDialog by remember { mutableStateOf(false) }
     var renameInput by remember { mutableStateOf("") }
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
@@ -93,9 +102,19 @@ fun PdfPreviewScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is PdfPreviewEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = readingMode.backgroundColor,
         topBar = {
             TopAppBar(
                 title = {
@@ -149,6 +168,24 @@ fun PdfPreviewScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            val nextMode = when (readingMode) {
+                                PdfReadingMode.NORMAL -> PdfReadingMode.SEPIA
+                                PdfReadingMode.SEPIA -> PdfReadingMode.NIGHT
+                                PdfReadingMode.NIGHT -> PdfReadingMode.NORMAL
+                            }
+                            viewModel.setReadingMode(nextMode)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BrightnessMedium,
+                            contentDescription = "Mode Membaca",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -165,27 +202,36 @@ fun PdfPreviewScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         OutlinedButton(
                             onClick = { exporter.sharePdf(file) },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Icon(Icons.Default.Share, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Bagikan")
+                            Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Bagikan", style = MaterialTheme.typography.labelMedium)
+                        }
+                        OutlinedButton(
+                            onClick = { showStampDialog = true },
+                            modifier = Modifier.weight(1.1f)
+                        ) {
+                            Icon(Icons.Default.Draw, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Beri TTD", style = MaterialTheme.typography.labelMedium)
                         }
                         Button(
                             onClick = {
                                 activeFileForSaving = file
                                 createDocumentLauncher.launch(file.name)
                             },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1.1f)
                         ) {
-                            Icon(Icons.Default.Download, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Unduh PDF")
+                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Unduh", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
@@ -228,9 +274,10 @@ fun PdfPreviewScreen(
             }
             is PdfPreviewUiState.Success -> {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
+                        .background(readingMode.backgroundColor)
                         .padding(innerPadding),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -268,6 +315,19 @@ fun PdfPreviewScreen(
                 }
             },
             onDismiss = { showRenameDialog = false }
+        )
+    }
+
+    if (showStampDialog && uiState is PdfPreviewUiState.Success) {
+        val total = (uiState as PdfPreviewUiState.Success).pages.size
+        StampSignatureDialog(
+            totalPages = total,
+            signatures = savedSignatures,
+            onConfirm = { signatureFile, pageIndex, alignment ->
+                showStampDialog = false
+                viewModel.stampSignature(signatureFile, pageIndex, alignment)
+            },
+            onDismiss = { showStampDialog = false }
         )
     }
 }

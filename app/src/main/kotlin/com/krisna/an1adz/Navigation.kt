@@ -7,7 +7,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.runtime.NavKey
 import com.krisna.an1adz.data.DefaultPdfRepository
+import com.krisna.an1adz.data.DefaultSignatureRepository
 import com.krisna.an1adz.ui.main.MainScreen
 import com.krisna.an1adz.ui.main.MainScreenViewModel
 import com.krisna.an1adz.ui.preview.PdfPreviewScreen
@@ -16,10 +18,11 @@ import com.krisna.an1adz.ui.signature.SignatureScreen
 import com.krisna.an1adz.ui.signature.SignatureViewModel
 
 @Composable
-fun MainNavigation() {
-    val backStack = rememberNavBackStack(Main)
+fun MainNavigation(initialNavKey: NavKey = Main) {
+    val backStack = rememberNavBackStack(initialNavKey)
     val context = LocalContext.current
     val pdfRepository = remember(context) { DefaultPdfRepository(context) }
+    val signatureRepository = remember(context) { DefaultSignatureRepository(context) }
 
     NavDisplay(
         backStack = backStack,
@@ -38,7 +41,7 @@ fun MainNavigation() {
                 val previewViewModel: PdfPreviewViewModel = viewModel(
                     key = key.filePath
                 ) {
-                    PdfPreviewViewModel(key.filePath, pdfRepository)
+                    PdfPreviewViewModel(key.filePath, pdfRepository, signatureRepository)
                 }
                 PdfPreviewScreen(
                     viewModel = previewViewModel,
@@ -47,7 +50,7 @@ fun MainNavigation() {
             }
             entry<SignatureNavKey> {
                 val signatureViewModel: SignatureViewModel = viewModel {
-                    SignatureViewModel(context)
+                    SignatureViewModel(signatureRepository)
                 }
                 SignatureScreen(
                     viewModel = signatureViewModel,

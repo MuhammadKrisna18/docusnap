@@ -144,6 +144,14 @@ fun MainScreen(
         }
     }
 
+    val pdfPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.openExternalPdf(uri)
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
@@ -267,13 +275,28 @@ fun MainScreen(
             }
 
             item {
-                SecondaryActionCard(
-                    icon = Icons.Default.Draw,
-                    title = "Tanda Tangan Digital",
-                    subtitle = "Buat & simpan tanda tangan PNG transparan tanpa background",
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { onNavigate(SignatureNavKey) }
-                )
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    SecondaryActionCard(
+                        icon = Icons.Default.PictureAsPdf,
+                        title = "Buka PDF",
+                        subtitle = "Pembaca berkas PDF",
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            pdfPickerLauncher.launch(arrayOf("application/pdf"))
+                        }
+                    )
+
+                    SecondaryActionCard(
+                        icon = Icons.Default.Draw,
+                        title = "Tanda Tangan",
+                        subtitle = "PNG Transparan",
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNavigate(SignatureNavKey) }
+                    )
+                }
             }
 
             item {

@@ -6,18 +6,22 @@ import android.net.Uri
 import com.krisna.an1adz.core.pdf.DefaultDocumentSourceReader
 import com.krisna.an1adz.core.pdf.DefaultPdfGenerator
 import com.krisna.an1adz.core.pdf.DefaultPdfPreviewRenderer
+import com.krisna.an1adz.core.pdf.DefaultPdfSignatureStamper
 import com.krisna.an1adz.core.pdf.DefaultScanFilterProcessor
 import com.krisna.an1adz.core.pdf.DocumentSourceReader
 import com.krisna.an1adz.core.pdf.FilterType
 import com.krisna.an1adz.core.pdf.PdfGenerator
 import com.krisna.an1adz.core.pdf.PdfPreviewRenderer
+import com.krisna.an1adz.core.pdf.PdfSignatureStamper
 import com.krisna.an1adz.core.pdf.ScanFilterProcessor
+import com.krisna.an1adz.core.signature.SignatureAlignment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 
 interface PdfRepository {
@@ -26,6 +30,13 @@ interface PdfRepository {
     suspend fun convertImagesToPdf(uris: List<Uri>, filterType: FilterType): Result<File>
     suspend fun convertDocumentsToPdf(uris: List<Uri>): Result<File>
     suspend fun copyScannedPdf(sourceUri: Uri): Result<File>
+    suspend fun importExternalPdf(sourceUri: Uri): Result<File>
+    suspend fun stampSignatureToPdf(
+        pdfFile: File,
+        signatureFile: File,
+        pageIndex: Int,
+        alignment: SignatureAlignment
+    ): Result<File>
     suspend fun renderPdfPages(pdfFile: File): Result<List<Bitmap>>
     suspend fun deleteDocument(file: File): Boolean
     suspend fun renameDocument(file: File, newName: String): Result<File>
@@ -36,7 +47,8 @@ class DefaultPdfRepository(
     private val documentSourceReader: DocumentSourceReader = DefaultDocumentSourceReader(context),
     private val scanFilterProcessor: ScanFilterProcessor = DefaultScanFilterProcessor(),
     private val pdfGenerator: PdfGenerator = DefaultPdfGenerator(),
-    private val pdfPreviewRenderer: PdfPreviewRenderer = DefaultPdfPreviewRenderer()
+    private val pdfPreviewRenderer: PdfPreviewRenderer = DefaultPdfPreviewRenderer(),
+    private val pdfSignatureStamper: PdfSignatureStamper = DefaultPdfSignatureStamper()
 ) : PdfRepository {
 
     private val _recentDocuments = MutableStateFlow<List<File>>(emptyList())
@@ -88,12 +100,11 @@ class DefaultPdfRepository(
                     }
 
                     val content = documentSourceReader.readTextFromUri(uri)
-                    if (content != null) {
-                        if (uris.size > 1) {
-                            stringBuilder.append("=== FILE ${index + 1}: $fileName ===\n\n")
+                    if (!content.isNullOrBlank()) {
+                        if (index > 0) {
+                            stringBuilder.append("\n\n--- Halaman Dokumen Berikutnya: $fileName ---\n\n")
                         }
                         stringBuilder.append(content)
-                        stringBuilder.append("\n\n")
                     }
                 }
 
@@ -116,7 +127,7 @@ class DefaultPdfRepository(
             runCatching {
                 val targetFile = documentSourceReader.createDocumentFile("kamera_scan")
                 val stream = if (sourceUri.scheme == "file") {
-                    java.io.FileInputStream(File(sourceUri.path ?: sourceUri.schemeSpecificPart))
+                    FileInputStream(File(sourceUri.path ?: sourceUri.schemeSpecificPart))
                 } else {
                     context.contentResolver.openInputStream(sourceUri)
                 }
@@ -129,6 +140,42 @@ class DefaultPdfRepository(
                 targetFile
             }
         }
+
+    override suspend fun importExternalPdf(sourceUri: Uri): Result<File> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val originalName = documentSourceReader.getUriFileName(sourceUri)
+                val cleanPrefix = originalName.substringBeforeLast(".").ifBlank { "dokumen_buka" }
+                val targetFile = documentSourceReader.createDocumentFile(cleanPrefix.take(20))
+                val stream = if (sourceUri.scheme == "file") {
+                    FileInputStream(File(sourceUri.path ?: sourceUri.schemeSpecificPart))
+                } else {
+                    context.contentResolver.openInputStream(sourceUri)
+                }
+                stream?.use { input ->
+                    FileOutputStream(targetFile).use { output ->
+                        input.copyTo(output)
+                    }
+                } ?: throw IllegalArgumentException("Gagal membuka file PDF")
+                refreshRecentDocuments()
+                targetFile
+            }
+        }
+
+    override suspend fun stampSignatureToPdf(
+        pdfFile: File,
+        signatureFile: File,
+        pageIndex: Int,
+        alignment: SignatureAlignment
+    ): Result<File> = withContext(Dispatchers.IO) {
+        val originalName = pdfFile.nameWithoutExtension
+        val targetFile = documentSourceReader.createDocumentFile("${originalName}_ttd".take(25))
+        val result = pdfSignatureStamper.stampSignature(pdfFile, signatureFile, pageIndex, alignment, targetFile)
+        if (result.isSuccess) {
+            refreshRecentDocuments()
+        }
+        result
+    }
 
     override suspend fun renderPdfPages(pdfFile: File): Result<List<Bitmap>> =
         pdfPreviewRenderer.renderPages(pdfFile)

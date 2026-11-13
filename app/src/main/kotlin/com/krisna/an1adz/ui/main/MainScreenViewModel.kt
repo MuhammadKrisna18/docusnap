@@ -131,6 +131,20 @@ class MainScreenViewModel(
         }
     }
 
+    fun openExternalPdf(uri: Uri) {
+        viewModelScope.launch {
+            _uiState.value = MainUiState.Processing("Membuka berkas PDF...")
+            pdfRepository.importExternalPdf(uri)
+                .onSuccess { file ->
+                    _uiState.value = MainUiState.Idle
+                    _eventChannel.send(MainNavigationEvent.OpenPreview(file.absolutePath))
+                }
+                .onFailure { throwable ->
+                    _uiState.value = MainUiState.Error(throwable.localizedMessage ?: "Gagal membuka berkas PDF")
+                }
+        }
+    }
+
     fun processImages(uris: List<Uri>, filterType: FilterType) {
         viewModelScope.launch {
             _uiState.value = MainUiState.Processing("Memproses ${uris.size} gambar resolusi tinggi ke PDF...")
